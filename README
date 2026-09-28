@@ -1,0 +1,139 @@
+# Phân tích Vận hành - Hiểu về khách hàng tại TIMA (P2P Lending)
+
+> Từ 2.383 khoản vay đến câu trả lời cho bộ phận Kinh doanh & Vận hành: **rủi ro thật nằm ở đâu, và nên ưu tiên khách hàng nào?**
+
+Đồ án  · Trường Đại học Bách Khoa Hà Nội
+
+![Python](https://img.shields.io/badge/Python-3.x-blue) ![Google Colab](https://img.shields.io/badge/Google%20Colab-Notebook-orange) ![Power BI](https://img.shields.io/badge/Power%20BI-Dashboard-yellow) ![K-Means](https://img.shields.io/badge/ML-K--Means-green)
+
+---
+
+## 📌 Bối cảnh
+
+**TIMA** là công ty FinTech tại Việt Nam, triển khai từ năm 2016 với định vị là nền tảng cho vay ngang hàng (P2P) đầu tiên, kết nối người cần vay vốn với nhà đầu tư trên toàn quốc.
+
+Giai đoạn 2016–2019, mô hình đã hoạt động ở quy mô thật nhưng **chưa có văn bản pháp luật điều chỉnh trực tiếp**. Khung pháp lý chính thức đầu tiên cho P2P chỉ xuất hiện với Nghị định 94/2025/NĐ-CP.
+
+Dự án nhóm gồm 4 thành viên, mỗi người phân tích cùng bộ dữ liệu theo góc nhìn một bộ phận:
+
+| Bộ phận | Trọng tâm |
+|---|---|
+| Ban Lãnh đạo Cấp cao | Sức khỏe tổng thể & tăng trưởng |
+| Bộ phận Sản phẩm | Tối ưu danh mục sản phẩm |
+| Bộ phận Quản lý Rủi ro | Mô hình & chính sách tín dụng |
+| **Bộ phận Kinh doanh & Vận hành** | **Chân dung khách hàng (repo này)** |
+
+### ❓ Câu hỏi cần trả lời
+> Dựa vào đặc điểm khách hàng, đội ngũ kinh doanh nên tập trung tiếp cận những đối tượng nào để tăng tỷ lệ thành công?
+
+---
+
+## 📂 Cấu trúc repository
+
+```
+├── README.md
+├── <ten_notebook>.ipynb      # Notebook Google Colab: làm sạch dữ liệu, EDA, K-Means
+└── <ten_slide>.pdf           # Slide trình bày kết quả
+```
+
+🔗 **Mở notebook trên Colab:** [Open in Colab](<link-colab>)
+
+---
+
+## 🗂️ Dữ liệu
+
+- **2.383 khoản vay · 1.868 khách hàng**, giải ngân từ 06/2016 đến 01/2019
+- **Làm sạch:** loại giá trị giả danh (sentinel), ép kiểu dữ liệu, đối chiếu quy tắc nghiệp vụ (dư nợ, trạng thái, mốc thời gian), kiểm tra rò rỉ dữ liệu
+
+### ⚠️ Giới hạn của dữ liệu
+1. Không có lãi suất và kết quả thu hồi tài sản đảm bảo → phân tích xoay quanh **rủi ro**, không phải lợi nhuận.
+2. 100% hồ sơ đều đã giải ngân → chưa đo được tỷ lệ duyệt và thời gian xử lý hồ sơ.
+3. Không có thông tin CIC trước 21/1/2019 → doanh nghiệp dùng điểm tín dụng nội bộ (`TS_CREDIT_SCORE_V2`).
+4. Không có dữ liệu phía nhà đầu tư → chỉ phản ánh phía vay vốn.
+
+---
+
+## 🔬 Phương pháp
+
+**1. Khai phá dữ liệu (EDA):** so sánh tỷ lệ nợ xấu theo năm, sản phẩm, nghề nghiệp và hành vi vay lặp lại.
+
+**2. Phân cụm khách hàng bằng K-Means:**
+- Gộp 2.383 khoản vay về **1.868 khách hàng** (theo `CardNumber`) trước khi phân cụm, tránh khách vay nhiều lần bị tính trọng số lặp.
+- **5 biến:** giá trị vay (log), số lần vay, tuổi, kỳ hạn, thu nhập.
+- Loại **giới tính** (biến nhị phân áp đảo khoảng cách Euclidean) và **nhãn rủi ro** (tránh rò rỉ, giữ đúng bản chất unsupervised).
+- Chọn **k = 4** bằng Elbow + Silhouette (silhouette ≈ 0,254), `n_init = 50` để kết quả ổn định.
+
+---
+
+## 📊 Kết quả chính
+
+### Tổng quan danh mục
+
+| Chỉ số | Giá trị |
+|---|---|
+| Tổng giải ngân | 27,97 tỷ đồng |
+| Tỷ lệ nợ xấu nội bộ | 8,64% |
+| Khách hàng quay lại (≥ 2 khoản) | 19,0% |
+| Giá trị vay trung vị | 8,00 triệu (TB 11,74 triệu) |
+
+| Năm | Giải ngân | Số khoản vay | Tỷ lệ nợ xấu |
+|---|---|---|---|
+| 2016 | 1,07 tỷ | 139 | 6,5% |
+| 2017 | 6,74 tỷ (+528%) | 752 | 7,6% |
+| 2018 | 20,12 tỷ (+198%) | 1.487 | 9,4%* |
+
+\* Lứa 2018 chưa đủ độ chín (38% khoản vẫn đang vay), nên tỷ lệ nợ xấu thực tế có thể cao hơn.
+
+### Phát hiện từ EDA
+- **"Vay theo sim" là nguồn rủi ro mới từ 2018:** chiếm 12,5% sản lượng nhưng nợ xấu 33,6%, trong khi sản phẩm lõi "Cầm cố điện thoại" giảm từ 11,3% xuống 4,9%.
+- **Nghề nghiệp:** nhóm "Không có HĐLĐ" có nợ xấu 30,7% và "Kinh doanh tại nhà (không ĐKKD)" 21,2%, cao nhất trong các nhóm đủ mẫu.
+- **Khách quay lại:** chỉ 19% khách hàng nhưng tạo 32,7% giải ngân, nợ xấu 2,8% so với 12,0% của khách vay lần đầu.
+
+### Bốn chân dung khách hàng (K-Means)
+
+| Chân dung | Tỷ trọng | Đặc điểm | Tỷ lệ khách từng nợ xấu |
+|---|---|---|---|
+| Trẻ, giá trị vay nhỏ | 48,6% | Tuổi TB 27,3; vay trung vị 5 triệu | **16,5%** |
+| Thu nhập cao, khoản vay lớn | 26,0% | Tuổi TB 37,6; lương TB 13,3 triệu | 6,8% |
+| Trung thành, vay lặp lại | 5,5% | TB 3,56 lần vay | 5,8% |
+| Kỳ hạn dài, ổn định | 19,9% | Kỳ hạn TB 10,9 tháng | **4,6%** |
+
+*Trung bình hệ thống (theo khách hàng): 11,0%*
+
+Dù không dùng nhãn rủi ro khi phân cụm, các cụm vẫn tách biệt rõ về mức rủi ro. Khi loại "Vay theo sim", cụm "Trẻ, giá trị vay nhỏ" vẫn có nợ xấu cao nhất (8,3%), cho thấy rủi ro nằm ở **chân dung khách hàng**, không chỉ ở sản phẩm.
+
+---
+
+## 💡 Đề xuất
+
+| # | Đề xuất | Khả thi | Kỳ vọng |
+|---|---|---|---|
+| 1 | Chặn tổ hợp "Vay theo sim" × cụm "Trẻ, giá trị vay nhỏ", giữ nguyên cho ba cụm còn lại | Cao · 1 tháng | Nợ xấu 8,64% → 5,48%, đánh đổi 2,2% sản lượng |
+| 2 | Dồn ngân sách ưu đãi tái vay vào cụm Trẻ và Thu nhập cao; cụm Kỳ hạn dài chuyển sang bài toán giữ chân | Cao · 1 tháng | Tỷ lệ khách quay lại > 19,0%, tỷ trọng giải ngân > 32,7% |
+| 3 | Bổ sung trường dữ liệu vận hành: ngày nộp hồ sơ, hồ sơ bị từ chối, lãi suất, kết quả xử lý tài sản đảm bảo | Trung bình · 1 quý | Đo được tỷ lệ duyệt, thời gian xử lý, nợ xấu điều chỉnh độ chín |
+| 4 | Chính sách thẩm định và hạn mức bậc thang riêng cho cụm "Trẻ, giá trị vay nhỏ" | Trung bình · 1 quý | Tỷ lệ khách từng nợ xấu của cụm 16,5% → ≤ 11,0% |
+
+---
+
+## 🛠️ Công cụ
+
+- **Python** (pandas, numpy, matplotlib, scikit-learn) trên **Google Colab**
+- **Power BI** (dashboard chung của nhóm)
+
+---
+
+## 📚 Tài liệu tham khảo
+
+1. Cecchetti, S. G. & Schoenholtz, K. L. — *Money, Banking, and Financial Markets*, Global Edition.
+2. TIMA — Website chính thức.
+3. thuvienphapluat.vn — Quy định pháp luật về cho vay ngang hàng từ 1/7/2025.
+4. vietnambiz.vn — NHNN thành lập Ban Chỉ đạo về lĩnh vực công nghệ tài chính.
+5. hanoimoi.vn — Ngân hàng Nhà nước cảnh báo về việc cho vay ngang hàng.
+6. Nghị định 96/2016/NĐ-CP.
+7. Nghị định 94/2025/NĐ-CP — Cơ chế thử nghiệm có kiểm soát trong lĩnh vực ngân hàng.
+
+---
+
+## 👤 Tác giả
+
+**Jennguyen106**: phần phân tích góc nhìn Bộ phận Kinh doanh & Vận hành
